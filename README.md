@@ -1,16 +1,19 @@
 # WANDS - Wayfair ANnotation Dataset
 
-[![OSS Template Version](https://img.shields.io/badge/OSS%20Template-0.3.5-7f187f.svg)](https://github.com/wayfair/WANDS/blob/main/CHANGELOG.md)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
+Note: this is a "fork" of the original dataset with the data transformed from
+csv to duckdb for convenience.
 
 ## About The Project
 
-WANDS is a Wayfair product search relevance dataset that is published as a companion to the paper from ECIR 2022:
+WANDS is a Wayfair product search relevance dataset that is published as a
+companion to the paper from ECIR 2022:
 
-> WANDS: Dataset for Product Search Relevance Assessment  
-> Yan Chen, Shujian Liu, Zheng Liu, Weiyi Sun, Linas Baltrunas and Benjamin Schroeder
+> WANDS: Dataset for Product Search Relevance Assessment\
+> Yan Chen, Shujian Liu, Zheng Liu, Weiyi Sun, Linas Baltrunas and Benjamin
+> Schroeder
 
-The dataset allows objective benchmarking and evaluation of search engines on an E-Commerce dataset. Key features of this dataset includes:
+The dataset allows objective benchmarking and evaluation of search engines on an
+E-Commerce dataset. Key features of this dataset includes:
 
 1. 42,994 candidate products
 2. 480 queries
@@ -18,69 +21,52 @@ The dataset allows objective benchmarking and evaluation of search engines on an
 
 Please refer to the paper for more details.
 
-## Getting Started
-
-To get a local copy up and running follow these simple steps.
-
-### Installation
-
-Clone the repo
-
-   ```sh
-   git clone https://github.com/wayfair/WANDS.git
-   ```
-
 ## Dataset Details
 
-The data is stored in the ```dataset``` folder in three files:
+The data is stored in `wands.db`. The database consists of three tables:
 
-1. ```product.csv``` - Stores all candidate products, columns include:  
-   a. product_id - ID of a product  
-   b. product_name - String of product name  
-   c. product_class - Category which product falls under  
-   d. category_hierarchy - Parent categories of product, delimited by ```/```  
-   e. product_description - String description of product  
-   f. product_features -  ```|``` delimited string of attribute:value pairs which describe the product  
-   g. rating_count - Number of user ratings for product  
-   h. average_rating - Average rating the product received  
-   i. review_count - Number of user reviews for product  
+The `product` table:
 
-2. ```query.csv``` - Stores search queries, columns include:  
-   a. query_id - unique ID for each query  
-   b. query - query string  
-   c. query_class - category to which the query falls under  
+```sql
+create table product(
+    id int64 primary key -- ID of product,
+    name varchar not null -- product's name,
+    description varchar -- description of product,
+    category varchar -- category which product falls under,
+    category_hierarchy varchar[] -- parent categories of the product,
+    features json not null -- attributes describing the product,
+    rating_count double -- number of user ratings for the product,
+    average_rating double -- average rating the product received,
+    review_count double -- number of user reviews for the product,
+);
+```
 
-3. ```label.csv``` - Stores annotated (product,relevance judgement) pairs, columns include  
-   a. id - Unique ID for each annotation  
-   b. query_id - ID of the query this annotation is for  
-   c. product_id - ID of the product this annotation applies to  
-   d. label - Relevance label, one of 'Exact', 'Partial', or 'Irrelevant'  
+The `query` table:
 
-### Sample Notebook
+```sql
+create table query(
+    id int64 primary key, -- unique ID for each query
+    query varchar not null, -- query string
+    class varchar -- category to which this query falls under
+);
+```
 
-We have included a sample notebook ```read_dataset.ipynb``` to show you how you can read the data from the three CSV files easily.
+The `label` table:
 
-### Annotation Guidelines
+```sql
+create type label_t as enum('Irrelevant', 'Partial', 'Exact');
 
-We released [annotation guidelines](Product%20Search%20Relevance%20Annotation%20Guidelines.pdf) as a supplement to the dataset.
-
-## Roadmap
-
-See the [open issues](https://github.com/wayfair/WANDS/issues) for a list of proposed features (and known issues).
-
-## Contributing
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**. For detailed contributing guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.md)
+create table label(
+    id int64 primary key, -- unique ID for each annotation
+    query_id int64 not null references query(id), -- query ID for annotation
+    product_id int64 not null references product(id), -- product ID for annotation
+    label label_t not null -- relevance label
+);
+```
 
 ## License
 
 Distributed under the `MIT` License. See `LICENSE` for more information.
-
-## Contact
-
-For questions or feedback, please reach out to `ecir2022data@gmail.com` or the first author of the referenced paper.
-
-Project Link: [https://github.com/wayfair/WANDS](https://github.com/wayfair/WANDS)
 
 ## Citation
 
